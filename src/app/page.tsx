@@ -1,6 +1,13 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { TbWorld } from "react-icons/tb";
+import { TbMap } from "react-icons/tb"; // IconMap
+import { TbBuildingSkyscraper } from "react-icons/tb"; // IconCity
+import { TbMapPin } from "react-icons/tb"; // IconPin
+import { TbFilterX } from "react-icons/tb"; // IconReset
+import { TbChevronDown } from "react-icons/tb"; // IconChevron
+
 const IconGlobe = () => (
   <svg
     width="18"
@@ -90,6 +97,19 @@ const IconChevron = () => (
   </svg>
 );
 
+const bg = "#F7F7F7";
+const surface = "#FFFFFF";
+const border = "#E4E4E4";
+const textHigh = "#1A1A1A";
+const textMid = "#6B6B6B";
+const textLow = "#80a9e8";
+const accentBg = "#F0F4FF";
+const accent = "#6B8FD4";
+const accentBorder = "#A8BFEF";
+const gray = "#d0d4df";
+
+const STORAGE_KEY = "regional_filter_local_storage";
+
 interface SelectProps {
   label: string;
   icon: React.ReactNode;
@@ -106,23 +126,22 @@ function Select({
   icon,
   value,
   options,
-  name,
   onChange,
   disabled,
   placeholder,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
-  const selectedLabel = options.find((e: any) => e.id === value)?.name || "";
+  const selectedLabel = options.find((e) => e.id === value)?.name || "";
 
   return (
-    <div style={{ marginBottom: 20, position: "relative" }}>
+    <div style={{ marginBottom: 18, position: "relative" }}>
       <div
         style={{
           fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: "0.1em",
-          color: "#94A3B8",
-          marginBottom: 8,
+          fontWeight: 600,
+          letterSpacing: "0.08em",
+          color: textMid,
+          marginBottom: 6,
         }}>
         {label}
       </div>
@@ -133,20 +152,20 @@ function Select({
           alignItems: "center",
           gap: 10,
           border: `1.5px solid ${
-            open ? "#3B82F6" : disabled ? "#E2E8F0" : "#CBD5E1"
+            open ? accentBorder : disabled ? "#EBEBEB" : border
           }`,
-          borderRadius: 12,
-          padding: "11px 14px",
+          borderRadius: 10,
+          padding: "10px 13px",
           cursor: disabled ? "not-allowed" : "pointer",
-          background: disabled ? "#F8FAFC" : "#fff",
-          color: disabled ? "#94A3B8" : selectedLabel ? "#1E293B" : "#94A3B8",
-          transition: "all 0.15s",
+          background: disabled ? "#FAFAFA" : surface,
+          color: disabled ? textLow : selectedLabel ? textHigh : textMid,
+          transition: "border-color 0.15s",
           userSelect: "none",
-          boxShadow: open ? "0 0 0 3px #3B82F615" : "none",
+          boxShadow: open ? `0 0 0 3px ${accentBorder}30` : "none",
         }}>
         <span
           style={{
-            color: disabled ? "#CBD5E1" : selectedLabel ? "#3B82F6" : "#94A3B8",
+            color: disabled ? textLow : selectedLabel ? accent : textLow,
           }}>
           {icon}
         </span>
@@ -160,11 +179,11 @@ function Select({
         </span>
         <span
           style={{
-            color: "#94A3B8",
+            color: textLow,
             transform: open ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 0.2s",
           }}>
-          <IconChevron />
+          <TbChevronDown />
         </span>
       </div>
 
@@ -176,14 +195,14 @@ function Select({
             left: 0,
             right: 0,
             zIndex: 50,
-            background: "#fff",
-            border: "1.5px solid #E2E8F0",
-            borderRadius: 12,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+            background: surface,
+            border: `1px solid ${border}`,
+            borderRadius: 10,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.07)",
             marginTop: 4,
             overflow: "hidden",
           }}>
-          {options.map((opt: any) => (
+          {options.map((opt) => (
             <div
               key={opt.id}
               onClick={() => {
@@ -191,19 +210,20 @@ function Select({
                 setOpen(false);
               }}
               style={{
-                padding: "10px 16px",
+                padding: "10px 14px",
                 fontSize: 14,
                 cursor: "pointer",
-                background: opt.id === value ? "#EFF6FF" : "#fff",
-                color: opt.id === value ? "#3B82F6" : "#374151",
-                fontWeight: opt.id === value ? 600 : 400,
+                background: opt.id === value ? accentBg : surface,
+                color: opt.id === value ? accent : textHigh,
+                fontWeight: opt.id === value ? 500 : 400,
               }}
               onMouseEnter={(e) => {
                 if (opt.id !== value)
-                  e.currentTarget.style.background = "#F8FAFC";
+                  e.currentTarget.style.background = "#F3F3F3";
               }}
               onMouseLeave={(e) => {
-                if (opt.id !== value) e.currentTarget.style.background = "#fff";
+                if (opt.id !== value)
+                  e.currentTarget.style.background = surface;
               }}>
               {opt.name}
             </div>
@@ -220,9 +240,29 @@ export default function App() {
     regencies: { id: number; name: string; province_id: number }[];
     districts: { id: number; name: string; regency_id: number }[];
   } | null>(null);
-  const [provinsiId, setProvinsiId] = useState(null);
-  const [regencyId, setRegencyId] = useState(null);
-  const [districtId, setDistrictId] = useState(null);
+
+  const [provinsiId, setProvinsiId] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const dataSaved = localStorage.getItem(STORAGE_KEY);
+    return dataSaved ? JSON.parse(dataSaved).provinsiId ?? null : null;
+  });
+  const [regencyId, setRegencyId] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const dataSaved = localStorage.getItem(STORAGE_KEY);
+    return dataSaved ? JSON.parse(dataSaved).regencyId ?? null : null;
+  });
+  const [districtId, setDistrictId] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const dataSaved = localStorage.getItem(STORAGE_KEY);
+    return dataSaved ? JSON.parse(dataSaved).districtId ?? null : null;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ provinsiId, regencyId, districtId })
+    );
+  }, [provinsiId, regencyId, districtId]);
 
   const getData = async () => {
     try {
@@ -239,34 +279,25 @@ export default function App() {
     getData();
   }, []);
 
-  const selectedProvinsi = dataList?.provinces.find(
-    (prov) => prov.id === provinsiId
-  );
-  const selectedRegency = dataList?.regencies.find(
-    (reg) => reg.id === regencyId
-  );
-  const selectedDistrict = dataList?.districts.find(
-    (dist) => dist.id === districtId
-  );
+  const selectedProvinsi = dataList?.provinces.find((p) => p.id === provinsiId);
+  const selectedRegency = dataList?.regencies.find((r) => r.id === regencyId);
+  const selectedDistrict = dataList?.districts.find((d) => d.id === districtId);
 
   const regencyOptions = useMemo(
-    () =>
-      dataList?.regencies.filter(
-        (regency) => regency.province_id === provinsiId
-      ),
-    [provinsiId]
+    () => dataList?.regencies.filter((r) => r.province_id === provinsiId) ?? [],
+    [dataList, provinsiId]
   );
   const districtOptions = useMemo(
-    () => dataList?.districts.filter((dist) => dist.regency_id === regencyId),
-    [regencyId]
+    () => dataList?.districts.filter((d) => d.regency_id === regencyId) ?? [],
+    [dataList, regencyId]
   );
 
-  const handleProvinsi = (id: any) => {
+  const handleProvinsi = (id: number | null) => {
     setProvinsiId(id);
     setRegencyId(null);
     setDistrictId(null);
   };
-  const handleRegency = (id: any) => {
+  const handleRegency = (id: number | null) => {
     setRegencyId(id);
     setDistrictId(null);
   };
@@ -289,93 +320,87 @@ export default function App() {
         display: "flex",
         minHeight: "100vh",
         fontFamily: "'Inter', system-ui, sans-serif",
-        background: "#F1F5F9",
+        background: bg,
       }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        .reset-btn:hover { background: #EFF6FF !important; }
       `}</style>
 
-      {/* sidebar */}
+      {/* ── sidebar ── */}
       <div
         style={{
-          width: 280,
+          width: 272,
           minHeight: "100vh",
-          background: "#fff",
-          borderRight: "1px solid #E2E8F0",
-          padding: "28px 24px",
+          background: surface,
+          borderRight: `1px solid ${border}`,
+          padding: "24px 20px",
           display: "flex",
           flexDirection: "column",
           position: "sticky",
           top: 0,
           height: "100vh",
         }}>
+        {/* Logo */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 10,
-            marginBottom: 36,
+            marginBottom: 32,
           }}>
           <div
             style={{
-              background: "#EFF6FF",
-              color: "#3B82F6",
-              borderRadius: 10,
-              width: 36,
-              height: 36,
+              background: accentBg,
+              color: accent,
+              borderRadius: 9,
+              width: 34,
+              height: 34,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}>
-            <IconGlobe />
+            <TbWorld />
           </div>
-          <span style={{ fontWeight: 700, fontSize: 15, color: "#1E293B" }}>
-            Frontend Assesement
+          <span style={{ fontWeight: 600, fontSize: 14, color: textHigh }}>
+            Frontend Assessment - Jonathan Christiawan
           </span>
         </div>
 
         <div
           style={{
             fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            color: "#94A3B8",
-            marginBottom: 20,
+            fontWeight: 600,
+            letterSpacing: "0.1em",
+            color: textLow,
+            marginBottom: 16,
           }}>
           FILTER WILAYAH
         </div>
 
         <Select
           label="PROVINSI"
-          name="province"
-          icon={<IconMap />}
+          icon={<TbMap />}
           value={provinsiId}
-          options={dataList?.provinces || []}
+          options={dataList?.provinces ?? []}
           onChange={handleProvinsi}
           placeholder="Pilih Provinsi"
-          disabled={false}
         />
-
         <Select
           label="KOTA/KABUPATEN"
-          name="regency"
-          icon={<IconCity />}
+          icon={<TbBuildingSkyscraper />}
           value={regencyId}
-          options={regencyOptions || []}
+          options={regencyOptions}
           onChange={handleRegency}
           disabled={!provinsiId}
           placeholder="Pilih Kota/Kabupaten"
         />
-
         <Select
           label="KECAMATAN"
-          name="district"
-          icon={<IconPin />}
+          icon={<TbMapPin />}
           value={districtId}
-          options={districtOptions || []}
-          onChange={(id: any) => setDistrictId(id)}
+          options={districtOptions}
+          onChange={setDistrictId}
           disabled={!regencyId}
           placeholder="Pilih Kecamatan"
         />
@@ -383,67 +408,67 @@ export default function App() {
         <div style={{ flex: 1 }} />
 
         <button
-          className="reset-btn"
           onClick={handleReset}
           style={{
             width: "100%",
-            padding: "12px",
-            border: "1.5px solid #3B82F6",
-            borderRadius: 12,
-            background: "#fff",
-            color: "#3B82F6",
+            padding: "11px",
+            border: `1px solid ${accentBorder}`,
+            borderRadius: 10,
+            background: surface,
+            color: accent,
             fontSize: 13,
-            fontWeight: 600,
+            fontWeight: 500,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 8,
+            gap: 7,
             transition: "background 0.15s",
-          }}>
-          <IconReset /> RESET
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = accentBg)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = surface)}>
+          <TbFilterX /> RESET
         </button>
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* breadcrumb */}
+      {/* ── main ── */}
+      <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <div
+          className="breadcrumb"
           style={{
-            padding: "20px 48px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "#fff",
+            padding: "18px 44px",
+            borderBottom: `1px solid ${border}`,
+            background: surface,
           }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
+              gap: 7,
               fontSize: 13,
               flexWrap: "wrap",
             }}>
             {crumbs.map((c, i) => (
               <span
                 key={c}
-                style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {i > 0 && <span style={{ color: "#CBD5E1" }}> </span>}
+                style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                {i > 0 && <span style={{ color: textLow }}>›</span>}
                 <span
                   style={{
-                    color: i === crumbs.length - 1 ? "#3B82F6" : "#94A3B8",
-                    fontWeight: i === crumbs.length - 1 ? 600 : 400,
+                    color: i === crumbs.length - 1 ? accent : textMid,
+                    fontWeight: i === crumbs.length - 1 ? 500 : 400,
                   }}>
                   {c}
                 </span>
               </span>
             ))}
             {crumbs.length === 0 && (
-              <span style={{ color: "#CBD5E1" }}>
-                Belum ada wilayah dipilih
-              </span>
+              <span style={{ color: textLow }}>Belum ada wilayah dipilih</span>
             )}
           </div>
         </div>
 
-        {/* display */}
+        {/* main display */}
         <div
           style={{
             flex: 1,
@@ -453,32 +478,32 @@ export default function App() {
             padding: "48px",
           }}>
           {!selectedProvinsi ? (
-            <div style={{ textAlign: "center", color: "#CBD5E1" }}>
-              <div style={{ fontSize: 56, marginBottom: 16 }}>🗺️</div>
-              <div style={{ fontSize: 16, fontWeight: 500 }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 48, marginBottom: 14 }}>🗺️</div>
+              <div style={{ fontSize: 15, fontWeight: 400, color: textMid }}>
                 Pilih provinsi untuk memulai
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: "center", width: "100%", maxWidth: 600 }}>
+            <div style={{ textAlign: "center", width: "100%", maxWidth: 560 }}>
               <div>
                 <div
                   style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.15em",
-                    color: "#94A3B8",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    letterSpacing: "0.14em",
+                    color: textLow,
                     marginBottom: 10,
                   }}>
                   PROVINSI
                 </div>
                 <div
                   style={{
-                    fontSize: 64,
-                    fontWeight:  600,
-                    color: "#1E293B",
+                    fontSize: 60,
+                    fontWeight: 700,
+                    color: textHigh,
                     lineHeight: 1.1,
-                    marginBottom: selectedRegency ? 32 : 0,
+                    marginBottom: selectedRegency ? 28 : 0,
                   }}>
                   {selectedProvinsi.name}
                 </div>
@@ -487,31 +512,27 @@ export default function App() {
               {selectedRegency && (
                 <>
                   <div
-                    style={{
-                      color: "#CBD5E1",
-                      fontSize: 24,
-                      marginBottom: 32,
-                    }}>
+                    style={{ color: gray, fontSize: 20, marginBottom: 28 }}>
                     ↓
                   </div>
                   <div>
                     <div
                       style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: "0.15em",
-                        color: "#94A3B8",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        letterSpacing: "0.14em",
+                        color: textLow,
                         marginBottom: 10,
                       }}>
                       KOTA / KABUPATEN
                     </div>
                     <div
                       style={{
-                        fontSize: 56,
+                        fontSize: 52,
                         fontWeight: 600,
-                        color: "#1E293B",
+                        color: textHigh,
                         lineHeight: 1.1,
-                        marginBottom: selectedDistrict ? 32 : 0,
+                        marginBottom: selectedDistrict ? 28 : 0,
                       }}>
                       {selectedRegency.name}
                     </div>
@@ -522,29 +543,25 @@ export default function App() {
               {selectedDistrict && (
                 <>
                   <div
-                    style={{
-                      color: "#CBD5E1",
-                      fontSize: 24,
-                      marginBottom: 32,
-                    }}>
+                    style={{ color: gray, fontSize: 20, marginBottom: 28 }}>
                     ↓
                   </div>
                   <div>
                     <div
                       style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: "0.15em",
-                        color: "#94A3B8",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        letterSpacing: "0.14em",
+                        color: textLow,
                         marginBottom: 10,
                       }}>
                       KECAMATAN
                     </div>
                     <div
                       style={{
-                        fontSize: 48,
+                        fontSize: 44,
                         fontWeight: 600,
-                        color: "#1E293B",
+                        color: textHigh,
                         lineHeight: 1.1,
                       }}>
                       {selectedDistrict.name}
@@ -555,7 +572,7 @@ export default function App() {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
