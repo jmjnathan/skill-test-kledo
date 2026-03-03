@@ -2,11 +2,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { TbWorld } from "react-icons/tb";
-import { TbMap } from "react-icons/tb"; // IconMap
-import { TbBuildingSkyscraper } from "react-icons/tb"; // IconCity
-import { TbMapPin } from "react-icons/tb"; // IconPin
-import { TbFilterX } from "react-icons/tb"; // IconReset
-import { TbChevronDown } from "react-icons/tb"; // IconChevron
+import { TbMap } from "react-icons/tb"; 
+import { TbBuildingSkyscraper } from "react-icons/tb"; 
+import { TbMapPin } from "react-icons/tb"; 
+import { TbFilterX } from "react-icons/tb"; 
+import { TbChevronDown } from "react-icons/tb"; 
 
 const bg = "#F7F7F7";
 const surface = "#FFFFFF";
